@@ -2,6 +2,7 @@ package hiber.dao;
 
 import hiber.model.Car;
 import hiber.model.User;
+import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -9,12 +10,14 @@ import org.springframework.stereotype.Repository;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
-@SuppressWarnings("JpaQlInspection")
 @Repository
 public class UserDaoImp implements UserDao {
+   private final SessionFactory sessionFactory;
 
    @Autowired
-   private SessionFactory sessionFactory;
+   public UserDaoImp(SessionFactory sessionFactory) {
+      this.sessionFactory = sessionFactory;
+   }
 
    @Override
    public void add(User user) {
@@ -22,25 +25,37 @@ public class UserDaoImp implements UserDao {
    }
 
    @Override
-   @SuppressWarnings("unchecked")
-   public List<User> listUsers() {
-      TypedQuery<User> query=sessionFactory.getCurrentSession().createQuery("from User");
-      return query.getResultList();
+   public List<User> getAllUsers(){
+       TypedQuery<User> query= null;
+       try {
+           query = sessionFactory.getCurrentSession().createQuery("from User");
+       } catch (HibernateException e) {
+           throw new RuntimeException(e);
+       }
+       return query.getResultList();
    }
 
    @Override
-   @SuppressWarnings("unchecked")
-   public List<Car> listCars() {
-      TypedQuery<Car> query = sessionFactory.getCurrentSession().createQuery("from Car");
-      return query.getResultList();
+   public List<Car> getAllCars() {
+       TypedQuery<Car> query = null;
+       try {
+           query = sessionFactory.getCurrentSession().createQuery("from Car");
+       } catch (HibernateException e) {
+           throw new RuntimeException(e);
+       }
+       return query.getResultList();
    }
 
    @Override
-   @SuppressWarnings("unchecked")
    public User getUserByCar(String model, int series) {
-      String hql = "from User user where user.car.model = :model and user.car.series = :series";
-      TypedQuery<User> query = sessionFactory.getCurrentSession().createQuery(hql);
-      query.setParameter("model", model).setParameter("series", series);
-      return query.setMaxResults(1).getSingleResult();
+       TypedQuery<User> query = null;
+       try {
+           String hql = "from User user where user.car.model = :model and user.car.series = :series";
+           query = sessionFactory.getCurrentSession().createQuery(hql);
+           query.setParameter("model", model).setParameter("series", series);
+       } catch (HibernateException e) {
+           throw new RuntimeException(e);
+       }
+       return query.setMaxResults(1).getSingleResult();
    }
 }
